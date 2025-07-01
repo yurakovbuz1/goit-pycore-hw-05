@@ -1,5 +1,5 @@
 from typing import Callable, Generator
-from collections import defaultdict
+from collections import defaultdict, Counter
 import re
 import sys
 from colorama import Fore
@@ -73,18 +73,16 @@ def parse_log_line(line: str) -> dict:
 def load_logs(file_path: str) -> list:
     logs = []
     with open(file_path, 'r', encoding="UTF-8") as f:
-        for line in f:
-            logs.append(parse_log_line(line))
+        logs = [parse_log_line(line) for line in f]
     return logs
 
 def filter_logs_by_level(logs: list, level: str) -> list:
-    filtered_logs = [x for x in logs if x["level"] == level.upper()]
+    filtered_logs = list(filter(lambda x: x['level'] == level.upper(), logs))
+    # filtered_logs = [x for x in logs if x["level"] == level.upper()]
     return filtered_logs
 
 def count_logs_by_level(logs: list) -> dict:
-    log_counts = defaultdict(int)
-    for log in logs:
-        log_counts[log["level"]] += 1
+    log_counts = Counter(log["level"] for log in logs)
     return log_counts
 
 def display_log_counts(counts: dict) -> str:
@@ -102,10 +100,10 @@ color_map = {
 }
 
 if __name__ == "__main__":
-    # sys.argv = ["main.py", "logs.log", "critical"]
     if len(sys.argv) == 1:
         sys.exit(f"{Fore.RED}Error:{Fore.RESET} Please, provide the path to a log file.")
     path = sys.argv[1]
+
     try: 
         logs = load_logs(path)
     except FileNotFoundError:
@@ -120,7 +118,7 @@ if __name__ == "__main__":
     if not logs:
         sys.exit(f"{Fore.RED}Error:{Fore.RESET} No logs were found in the file provided.")
 
-    elif len(sys.argv) > 2:
+    if len(sys.argv) > 2:
         level = sys.argv[2]
         filtered_logs = filter_logs_by_level(logs, level)
         if not filtered_logs:
